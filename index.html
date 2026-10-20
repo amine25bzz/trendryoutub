@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrendRadar — ترند يوتيوب الآن</title>
+<style>
+  :root{
+    --bg:#0b0f19; --card:#151b2e; --card-2:#1a2138; --border:#232c48;
+    --text:#e6ecff; --muted:#8b95b8; --accent:#4f8cff; --accent-2:#7c5cff;
+    --green:#22c55e; --orange:#f59e0b; --red:#ef4444;
+    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',Tahoma,'Noto Sans Arabic',system-ui,sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%, #1b2450 0%, transparent 60%),
+               radial-gradient(900px 500px at 0% 100%, #241a4a 0%, transparent 55%), var(--bg);
+    color:var(--text);min-height:100vh;overflow-x:hidden;
+  }
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+  a{color:inherit}
+
+  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(11,15,25,.78);border-bottom:1px solid var(--border)}
+  .wrap{max-width:1320px;margin:0 auto;padding:0 22px}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:62px;gap:14px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:19px}
+  .brand .dot{width:30px;height:30px;border-radius:9px;
+    background:conic-gradient(from 45deg,var(--accent),var(--accent-2));
+    box-shadow:0 0 18px rgba(79,140,255,.6);display:grid;place-items:center;font-size:15px}
+  .brand small{color:var(--muted);font-weight:400;font-size:12px}
+  .btn{
+    border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13.5px;
+    padding:10px 22px;border-radius:11px;color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;gap:8px;white-space:nowrap
+  }
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+
+  .hero{text-align:center;padding:44px 0 8px}
+  .hero h2{font-size:clamp(23px,3.2vw,36px);line-height:1.45;font-weight:800}
+  .hero p.sub{color:var(--muted);margin:14px auto 0;font-size:14.5px;max-width:720px;line-height:1.9}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;margin-top:26px}
+  .chips{display:flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px}
+  .chip{border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;
+    padding:8px 16px;border-radius:9px;cursor:pointer}
+  .chip:hover{color:var(--text)}
+  .chip.active{background:var(--card-2);color:#fff;box-shadow:inset 0 0 0 1px #33427a}
+  .tb-label{font-size:12px;color:var(--muted)}
+  .filter,.select{background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);
+    padding:10px 14px;font-family:inherit;font-size:13px}
+  .filter{width:230px}
+  .filter::placeholder{color:#5c6790}
+
+  .searchbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin-top:16px}
+  .searchbar .filter{width:min(420px,90vw)}
+  .btn-ghost{border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;
+    font-size:12.5px;padding:7px 14px;border-radius:9px}
+  .btn-ghost:hover{color:var(--text)}
+  #searchResults{max-width:1320px;margin:26px auto 0;padding:0 22px}
+  #searchResults:empty{margin:0}
+  #results{max-width:1320px;margin:30px auto 80px;padding:0 22px}
+  .section{margin-bottom:46px}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+  .sec-head h3{font-size:20px}
+  .sec-head .meta{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.8;max-width:760px}
+  .badge{font-size:11.5px;padding:5px 12px;border-radius:99px;font-weight:600;
+    background:rgba(79,140,255,.14);color:#8fb4ff;border:1px solid rgba(79,140,255,.3);white-space:nowrap}
+
+  .warn{margin-bottom:14px;padding:12px 18px;border-radius:12px;font-size:13px;line-height:1.8;
+    background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.35);color:#fbcf85}
+  .err{margin-bottom:14px;padding:12px 18px;border-radius:12px;font-size:13px;line-height:1.8;
+    background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+
+  .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    overflow:hidden;box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead{background:var(--card-2)}
+  th{text-align:right;padding:13px 14px;font-size:12px;color:var(--muted);font-weight:700;
+    border-bottom:1px solid var(--border);white-space:nowrap}
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--text)}
+  th .arr{display:inline-block;width:0;height:0;margin-inline-start:7px;vertical-align:middle;
+    border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #8b95b8;opacity:.6}
+  th .arr.desc{border-top-color:var(--accent);opacity:1}
+  th .arr.asc{border-top:none;border-bottom:6px solid var(--accent);opacity:1}
+  th .real{display:block;font-size:10px;color:#5b6690;font-weight:400;margin-top:3px}
+  td{padding:13px 14px;border-bottom:1px solid rgba(35,44,72,.6);vertical-align:middle}
+  tbody tr:hover{background:rgba(79,140,255,.06)}
+  tbody tr:last-child td{border-bottom:none}
+  td.rank{font-weight:800;font-size:15px;color:#cfdcff;width:64px}
+
+  .app-cell{display:flex;align-items:center;gap:13px;min-width:280px}
+  .app-cell img,.app-cell .noimg{width:44px;height:44px;border-radius:12px;flex-shrink:0;border:1px solid var(--border)}
+  .app-cell img.vthumb,.app-cell .noimg{width:80px;height:45px;border-radius:8px}
+  .app-cell img{object-fit:cover;background:#0f1428}
+  .app-cell .noimg{background:linear-gradient(135deg,#1e2745,#2a3560);display:grid;place-items:center;font-size:18px}
+  .app-cell .meta{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .app-cell .name{font-weight:700;font-size:14px;color:#fff;text-decoration:none;
+    overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  a.name:hover{color:#8fb4ff;text-decoration:underline}
+  .app-cell .dev{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;
+    font-size:12px;font-weight:600;white-space:nowrap}
+  .pill.blue{background:rgba(79,140,255,.14);color:#8fb4ff}
+  .pill.green{background:rgba(34,197,94,.14);color:#5ee08a}
+  .pill.orange{background:rgba(245,158,11,.14);color:#fbbf5c}
+  .pill.gray{background:rgba(139,149,184,.12);color:#a9b2d0}
+  .pill.red{background:rgba(239,68,68,.14);color:#fca5a5}
+  .cell-main{font-weight:700;font-size:15px}
+  .cell-main.na{color:var(--muted);font-weight:400;font-size:13px}
+  .cell-sub{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.6}
+  .pills{display:flex;flex-wrap:wrap;gap:5px;min-width:190px}
+
+  .skel-row td{padding:16px}
+  .skel{height:14px;border-radius:6px;background:linear-gradient(90deg,#1c2542,#28345a,#1c2542);
+    background-size:200% 100%;animation:shimmer 1.3s infinite}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  .empty{text-align:center;padding:44px 24px;color:var(--muted)}
+  .empty .big{font-size:42px;margin-bottom:12px;opacity:.6}
+  .empty h4{color:var(--text);font-size:17px;margin-bottom:8px}
+  .empty p{font-size:13.5px;max-width:600px;margin:0 auto 10px;line-height:1.9}
+  .empty code,.note code{direction:ltr;unicode-bidi:isolate;display:inline-block;font-size:12px;color:#c7d6ff;
+    background:var(--card-2);padding:1px 8px;border-radius:6px}
+
+  .note{margin-top:16px;padding:16px 20px;border-radius:12px;background:rgba(79,140,255,.07);
+    border:1px solid rgba(79,140,255,.25);font-size:12.5px;color:#a9bde8;line-height:1.9}
+  .note b{color:#c7d6ff}
+  .note ul{margin:8px 18px 0 0;padding:0}
+  .note li{margin-bottom:5px}
+
+  footer{text-align:center;padding:30px 20px 50px;color:var(--muted);font-size:12.5px;
+    border-top:1px solid var(--border);margin-top:40px}
+
+  @media(max-width:1000px){
+    .hide-md{display:none}
+    .table-wrap{overflow-x:auto}
+    table{min-width:640px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="brand"><div class="dot">📡</div><div>TrendRadar <small>v6 · YouTube</small></div></div>
+    <button class="btn" id="refreshBtn" type="button">🔄 تحديث</button>
+  </div>
+</header>
+
+<section class="hero wrap">
+  <h2>الفيديوهات الأكثر رواجاً الآن على يوتيوب</h2>
+  <p class="sub">فيديوهات عادية وShorts وكيدس، بدون الموسيقى. تُحمَّل النتائج تلقائياً عند فتح الصفحة، وفي كل فيديو الدول التي يظهر فيها في الترند. كل رقم من YouTube Data API.</p>
+
+  <div class="toolbar">
+    <span class="tb-label">النوع</span>
+    <div class="chips" role="group" aria-label="نوع الفيديوهات">
+      <button class="chip active" data-type="all"     type="button">الكل</button>
+      <button class="chip"        data-type="regular" type="button">عادي</button>
+      <button class="chip"        data-type="short"   type="button">Shorts</button>
+      <button class="chip"        data-type="kids"    type="button">كيدس</button>
+    </div>
+    <select class="select" id="cc" aria-label="تصفية بالدولة"><option value="">كل الدول</option></select>
+    <input class="filter" id="q" type="search" aria-label="تصفية النتائج (اختياري)" placeholder="تصفية النتائج بكلمة (اختياري)">
+  </div>
+
+  <div class="searchbar" role="search">
+    <input class="filter" id="sq" type="search" aria-label="بحث في يوتيوب" placeholder="🔎 ابحث في يوتيوب عن أي فيديو أو قناة">
+    <select class="select" id="st" aria-label="نوع البحث"><option value="video">فيديو</option><option value="channel">قناة</option></select>
+    <button class="btn" id="searchBtn" type="button">بحث</button>
+  </div>
+</section>
+
+<section id="searchResults" aria-live="polite"></section>
+
+<section id="results" aria-live="polite"></section>
+
+<footer>TrendRadar v6 — YouTube Data API v3 (videos.list · chart=mostPopular)</footer>
+
+<script>
+'use strict';
+/* ================================================================
+   TrendRadar v6 — ترند يوتيوب
+   ----------------------------------------------------------------
+     - نفس المنهج: الصفحة تُحمَّل تلقائياً، والخادم (server.js) يجلب البيانات لأن المفتاح سري.
+     - ثلاثة جداول: عادي · Shorts · كيدس. الموسيقى مستبعدة (تصنيف Music).
+     - في كل صف: الدول التي يظهر فيها الفيديو في قائمة الأكثر رواجاً.
+     - الترتيب: الأكثر انتشاراً في دول أكثر أولاً، ثم أفضل موقع له في أي دولة.
+     - الضغط على أي عنوان عمود يرتّب الجدول (الأرقام من الأكبر إلى الأصغر).
+   ================================================================ */
+
+const $ = id => document.getElementById(id);
+const API = (new URLSearchParams(location.search).get('api') || '').replace(/\/$/, '');
+
+const state = {
+  type: 'all', q: '', cc: '', sorts: {}, search: { status: 'idle' },
+  stores: { status: 'loading' }          // loading | ok | error
+};
+
+class HttpError extends Error { constructor(status, msg){ super(msg || ('HTTP ' + status)); this.status = status; } }
+
+/* ---------- أدوات ---------- */
+const nf = new Intl.NumberFormat('en-US');
+const fmtFull = n => nf.format(Math.round(n || 0));
+function formatNum(n){
+  n = n || 0;
+  if(n >= 1e9) return (n/1e9).toFixed(1).replace(/\.0$/,'') + 'B';
+  if(n >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
+  if(n >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'') + 'K';
+  return String(Math.round(n));
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+const safeUrl = u => /^https:\/\//i.test(u || '') ? escapeHtml(u) : '#';
+function daysBetween(d){ const t = Date.parse(d); return Number.isFinite(t) ? (Date.now() - t) / 864e5 : null; }
+function daysAgo(d){
+  const n = daysBetween(d);
+  if(n === null) return '—';
+  if(n < 1) return 'اليوم';
+  if(n < 30) return `قبل ${Math.round(n)} يوم`;
+  if(n < 365) return `قبل ${Math.round(n/30)} شهر`;
+  return `قبل ${(n/365).toFixed(1)} سنة`;
+}
+const clockMs = ms => new Date(ms).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+function fmtDur(s, live){
+  if(live) return 'بث مباشر';
+  if(!s) return '—';
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, p = n => String(n).padStart(2, '0');
+  return h ? `${h}:${p(m)}:${p(x)}` : `${m}:${p(x)}`;
+}
+
+let DN = null;
+function regionName(cc){
+  try { DN = DN || new Intl.DisplayNames(['ar'], { type: 'region' }); return DN.of(cc) || cc; } catch(e){ return cc; }
+}
+const flag = cc => /^[A-Z]{2}$/.test(cc) ? String.fromCodePoint(...[...cc].map(c => 127397 + c.charCodeAt(0))) : '🌐';
+
+const CATS = { '1':'أفلام وأنيميشن','2':'سيارات','15':'حيوانات','17':'رياضة','19':'سفر','20':'ألعاب','22':'أشخاص ومدونات',
+  '23':'كوميديا','24':'ترفيه','25':'أخبار وسياسة','26':'تعليمات وأسلوب','27':'تعليم','28':'علوم وتقنية','29':'منظمات غير ربحية' };
+
+const matchesQ = it => {
+  if(state.cc && !(it.countries || []).some(c => c.cc === state.cc)) return false;
+  if(!state.q) return true;
+  const hay = [it.title, it.channel, CATS[it.categoryId] || '', (it.countries || []).map(c => regionName(c.cc)).join(' ')].join(' ').toLowerCase();
+  return hay.includes(state.q.toLowerCase());
+};
+
+/* ---------- ترتيب الأعمدة بالضغط على العنوان ---------- */
+const TEXT_KEYS = new Set(['name', 'country']);
+function thSort(tbl, key, label, real, cls){
+  const s = state.sorts[tbl];
+  const on = s && s.key === key;
+  return `<th class="sortable${cls ? ' ' + cls : ''}" data-tbl="${tbl}" data-sk="${key}" tabindex="0" role="button" aria-sort="${on ? (s.dir === 'desc' ? 'descending' : 'ascending') : 'none'}">${label}<span class="arr${on ? ' ' + s.dir : ''}"></span><span class="real">${real}</span></th>`;
+}
+function sortBy(rows, s, getters, tie){
+  const g = s && getters[s.key];
+  if(!g) return rows.slice().sort(tie);
+  const dir = s.dir === 'desc' ? -1 : 1;
+  const text = TEXT_KEYS.has(s.key);
+  return rows.slice().sort((a, b) => {
+    const x = g(a), y = g(b);
+    const nx = x === null || x === undefined || (typeof x === 'number' && !Number.isFinite(x));
+    const ny = y === null || y === undefined || (typeof y === 'number' && !Number.isFinite(y));
+    if(nx || ny) return nx && ny ? tie(a, b) : nx ? 1 : -1;   // القيم الفارغة دائماً في الآخر
+    const c = text ? String(x).localeCompare(String(y)) : x - y;
+    return c ? c * dir : tie(a, b);
+  });
+}
+function toggleSort(tbl, key){
+  const s = state.sorts[tbl];
+  state.sorts[tbl] = s && s.key === key
+    ? { key, dir: s.dir === 'desc' ? 'asc' : 'desc' }
+    : { key, dir: TEXT_KEYS.has(key) ? 'asc' : 'desc' };   // الأرقام: من الأكبر إلى الأصغر أولاً
+}
+const dateNum = d => { const t = Date.parse(d); return Number.isFinite(t) ? t : null; };
+const GET = {
+  rank: it => it.rank, name: it => it.title, views: it => it.views, likes: it => it.likes, comments: it => it.comments,
+  duration: it => it.live ? null : (it.duration || null), published: it => dateNum(it.published),
+  countries: it => (it.countries || []).length
+};
+
+/* ================================================================
+   الجلب من الخادم
+   ================================================================ */
+async function loadStores(force){
+  state.stores = { status: 'loading' };
+  renderAll();
+  try {
+    const res = await fetch(`${API}/api/trends${force ? '?refresh=1' : ''}`);
+    if(!res.ok){
+      let m = ''; try { m = (await res.json()).error || ''; } catch(e){ /* ليس JSON */ }
+      throw new HttpError(res.status, m);
+    }
+    const data = await res.json();
+    if(!data || !data.charts) throw new Error('رد غير متوقع من الخادم');
+    state.stores = { status: 'ok', data };
+    fillCountries(data);
+  } catch(e){
+    state.stores = { status: 'error', error: (e && e.message) || 'تعذّر الاتصال' };
+  }
+  renderAll();
+}
+
+function fillCountries(data){
+  const sel = $('cc'), cur = state.cc;
+  const codes = new Set(data.regions || []);
+  Object.values(data.charts).forEach(c => (c.items || []).forEach(it => it.countries.forEach(x => codes.add(x.cc))));
+  sel.innerHTML = '<option value="">كل الدول</option>' + [...codes].sort((a, b) => regionName(a).localeCompare(regionName(b), 'ar'))
+    .map(c => `<option value="${escapeHtml(c)}"${c === cur ? ' selected' : ''}>${flag(c)} ${escapeHtml(regionName(c))}</option>`).join('');
+}
+
+const SECTIONS = [
+  { id:'regular', title:'الفيديوهات العادية', ico:'🎬', hint:'فيديوهات أطول من دقيقة' },
+  { id:'short',   title:'Shorts',             ico:'⚡', hint:'فيديوهات مدتها دقيقة أو أقل' },
+  { id:'kids',    title:'كيدس',               ico:'🧒', hint:'فيديوهات يعلّمها ناشروها «مخصصة للأطفال»' }
+];
+
+function countriesCell(it){
+  const list = it.countries || [];
+  if(!list.length) return `<div class="cell-main na">—</div>`;
+  const show = list.slice(0, 3).map(c =>
+    `<span class="pill blue" title="${escapeHtml(regionName(c.cc))} · أفضل موقع #${c.rank}">${flag(c.cc)} ${escapeHtml(regionName(c.cc))}</span>`).join('');
+  const more = list.length > 3
+    ? `<span class="pill gray" title="${escapeHtml(list.slice(3).map(c => regionName(c.cc)).join('، '))}">+${list.length - 3}</span>` : '';
+  return `<div class="pills">${show}${more}</div><div class="cell-sub"><span class="ltr">${list.length}</span> دولة · أفضل موقع <span class="ltr">#${it.bestRank}</span></div>`;
+}
+function numCell(n, label){
+  if(n === null || n === undefined) return `<div class="cell-main na">—</div>`;
+  return `<div class="cell-main"><span class="ltr">${formatNum(n)}</span></div><div class="cell-sub"><span class="ltr">${fmtFull(n)}</span>${label ? ' ' + label : ''}</div>`;
+}
+function dateCell(iso){
+  if(!iso) return `<div class="cell-main na">—</div>`;
+  const d = daysBetween(iso);
+  const cls = d !== null && d < 3 ? 'green' : d !== null && d < 30 ? 'blue' : 'gray';
+  return `<span class="pill ${cls}">${String(iso).slice(0, 10)}</span><div class="cell-sub">${daysAgo(iso)}</div>`;
+}
+
+function videoRow(it, def){
+  const img = it.thumb
+    ? `<img class="app-img vthumb" data-fallback="${def.ico}" src="${safeUrl(it.thumb)}" alt="" loading="lazy">`
+    : `<div class="noimg">${def.ico}</div>`;
+  return `<tr>
+    <td class="rank"><span class="ltr">#${it.rank}</span></td>
+    <td><div class="app-cell">${img}<div class="meta">
+      <a class="name" href="${safeUrl(it.url)}" target="_blank" rel="noopener">${escapeHtml(it.title)}</a>
+      <div class="dev">${escapeHtml(it.channel)} · ${escapeHtml(CATS[it.categoryId] || 'غير مصنّف')}</div></div></div></td>
+    <td>${numCell(it.views, 'مشاهدة')}</td>
+    <td class="hide-md">${numCell(it.likes, '')}</td>
+    <td class="hide-md">${numCell(it.comments, '')}</td>
+    <td class="hide-md"><span class="pill gray"><span class="ltr">${fmtDur(it.duration, it.live)}</span></span></td>
+    <td>${dateCell(it.published)}</td>
+    <td>${countriesCell(it)}</td>
+  </tr>`;
+}
+
+function videoSection(def, data){
+  const c = data.charts[def.id];
+  const rows = c && c.ok ? c.items : [];
+  const shown = sortBy(rows.filter(matchesQ), state.sorts[def.id], GET, (a, b) => a.rank - b.rank);
+  const err = c && !c.ok ? `<div class="err">تعذّر جلب ${def.title}. ${escapeHtml(c.error || '')}</div>` : '';
+
+  return `<div class="section">
+    <div class="sec-head">
+      <div><h3>${def.ico} ${def.title}: الأكثر رواجاً الآن</h3>
+        <div class="meta">${def.hint} · المصدر: YouTube Data API v3 (<span class="ltr">chart=mostPopular</span>) · بدون الموسيقى · <span class="ltr">${(data.regions || []).length}</span> دولة</div></div>
+      <span class="badge">${shown.length} فيديو · آخر جلب ${clockMs(data.syncedAt)}</span>
+    </div>
+    ${err}
+    ${shown.length ? `<div class="table-wrap"><table>
+      <thead><tr>
+        ${thSort(def.id, 'rank', 'الترتيب', 'حسب عدد الدول ثم أفضل موقع')}
+        ${thSort(def.id, 'name', 'الفيديو', 'العنوان · القناة · التصنيف')}
+        ${thSort(def.id, 'views', 'المشاهدات', 'viewCount')}
+        ${thSort(def.id, 'likes', 'الإعجابات', 'likeCount', 'hide-md')}
+        ${thSort(def.id, 'comments', 'التعليقات', 'commentCount', 'hide-md')}
+        ${thSort(def.id, 'duration', 'المدة', 'duration', 'hide-md')}
+        ${thSort(def.id, 'published', 'تاريخ النشر', 'publishedAt')}
+        ${thSort(def.id, 'countries', 'الدول في الترند', 'أين يظهر الفيديو')}
+      </tr></thead><tbody>${shown.map(it => videoRow(it, def)).join('')}</tbody></table></div>`
+      : (err ? '' : `<div class="empty"><div class="big">🔍</div><h4>${rows.length ? 'لا نتائج تطابق التصفية' : 'لا توجد فيديوهات من هذا النوع في القوائم الحالية'}</h4></div>`)}
+  </div>`;
+}
+
+function notesBox(data){
+  const failed = Object.keys(data.failed || {});
+  return `${data.partial ? `<div class="warn">توقف الجلب جزئياً: ${escapeHtml(data.partial)}. النتائج قد تكون ناقصة.</div>` : ''}
+  ${failed.length ? `<div class="warn">تعذّر جلب قائمة الترند لهذه الدول: ${escapeHtml(failed.map(regionName).join('، '))}.</div>` : ''}
+  <div class="note"><b>كيف تُقرأ الجداول</b><ul>
+    <li><b>المصدر:</b> قوائم «الأكثر رواجاً» (<code>mostPopular</code>) لكل دولة من YouTube Data API، إضافةً إلى قوائم الفئات (ألعاب، ترفيه، رياضة، أخبار، تعليم…) لأن القائمة العامة يغلب عليها المحتوى الموسيقي. الأرقام (مشاهدات، إعجابات، تعليقات) كما يعطيها YouTube، وقد يخفي بعض الناشرين الإعجابات أو التعليقات فتظهر «—».</li>
+    <li><b>بدون الموسيقى:</b> نستبعد كل فيديو تصنيفه Music. قد يمرّ فيديو موسيقي رفعه ناشره تحت تصنيف آخر.</li>
+    <li><b>الدول في الترند:</b> كل دولة ظهر فيها الفيديو في إحدى القوائم المذكورة. المرور فوق اسم الدولة يعرض أفضل موقع للفيديو فيها. نغطي الدول المضبوطة في الخادم فقط (متغير <code>REGIONS</code>).</li>
+    <li><b>الترتيب:</b> من انتشر في دول أكثر يأتي أولاً، ثم الأعلى موقعاً في قائمة أي دولة. هذا ترتيب يحسبه TrendRadar وليس ترتيب يوتيوب الرسمي.</li>
+    <li><b>Shorts:</b> لا توجد قائمة رسمية لها في الـ API، فنعدّ Short كل فيديو مدته 60 ثانية أو أقل. الـ Shorts الأطول (حتى 3 دقائق) تظهر في «العادي»، وقد يظهر فيديو قصير عادي مدته أقل من دقيقة في Shorts.</li>
+    <li><b>كيدس:</b> تطبيق YouTube Kids لا يوفر واجهة عامة، فنعرض الفيديوهات التي يعلّمها ناشروها «مخصصة للأطفال» (<code>madeForKids</code>) من قوائم الترند. عددها عادةً قليل.</li>
+    <li>حصة YouTube API اليومية محدودة، لذلك يحفظ الخادم النتيجة 3 ساعات، وزر «تحديث» لا يجلب من جديد قبل مرور 5 دقائق.</li>
+  </ul></div>`;
+}
+
+function unreachableCard(){
+  const m = state.stores.error || '';
+  const err = m ? ` (${escapeHtml(m)})` : '';
+  if(/YOUTUBE_API_KEY|API key|keyInvalid|حصة/i.test(m)){
+    return `<div class="section"><div class="empty">
+      <div class="big">🔑</div>
+      <h4>مشكلة في مفتاح YouTube API${err}</h4>
+      <p>أنشئ مفتاحاً من Google Cloud Console وفعّل <span class="ltr">YouTube Data API v3</span>، ثم شغّل الخادم به:</p>
+      <p><code>YOUTUBE_API_KEY=مفتاحك npm start</code></p>
+      <p>ويندوز PowerShell: <code>$env:YOUTUBE_API_KEY="مفتاحك"; npm start</code></p>
+    </div></div>`;
+  }
+  return `<div class="section"><div class="empty">
+    <div class="big">🖥️</div>
+    <h4>لم أصل إلى خادم TrendRadar${err}</h4>
+    <p>البيانات تمر عبر الخادم لأن مفتاح YouTube يجب ألا يظهر في المتصفح. في مجلد المشروع شغّل
+    <code>npm install</code> ثم <code>YOUTUBE_API_KEY=مفتاحك npm start</code>، ثم افتح <code>http://localhost:3000</code>.
+    إن فتحت هذا الملف مباشرة من جهازك فأضف عنوان الخادم: <code>index.html?api=http://localhost:3000</code></p>
+  </div></div>`;
+}
+
+function skeleton(){
+  const headers = ['الترتيب', 'الفيديو', 'المشاهدات', 'تاريخ النشر', 'الدول في الترند'];
+  const rows = Array.from({ length: 5 }, () =>
+    `<tr class="skel-row">${headers.map((_, i) => `<td><div class="skel" style="width:${i === 1 ? 180 : 56}px"></div></td>`).join('')}</tr>`).join('');
+  return `<div class="section"><div class="sec-head"><div><h3>▶️ ترند يوتيوب</h3><div class="meta">جارٍ الجلب من الخادم… قد يستغرق أول جلب عدة ثوانٍ.</div></div></div>
+    <div class="table-wrap"><table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+/* ================================================================
+   البحث في يوتيوب (فيديو أو قناة)
+   ================================================================ */
+const CH_GET = {
+  rank: it => it.rank, name: it => it.title, subs: it => it.subs, videos: it => it.videos,
+  views: it => it.views, created: it => dateNum(it.created), country: it => it.country || null
+};
+const KIND = { regular: ['gray', 'عادي'], short: ['orange', 'Short'], kids: ['green', 'كيدس'] };
+
+async function runSearch(){
+  const q = $('sq').value.trim();
+  if(!q) return;
+  const type = $('st').value;
+  delete state.sorts.searchv; delete state.sorts.searchc;
+  state.search = { status: 'loading', q, type };
+  renderSearch();
+  try {
+    const res = await fetch(`${API}/api/search?q=${encodeURIComponent(q)}&type=${type}`);
+    if(!res.ok){
+      let m = ''; try { m = (await res.json()).error || ''; } catch(e){ /* ليس JSON */ }
+      throw new HttpError(res.status, m);
+    }
+    state.search = { status: 'ok', q, type, data: await res.json() };
+  } catch(e){
+    state.search = { status: 'error', q, type, error: (e && e.message) || 'تعذّر الاتصال' };
+  }
+  renderSearch();
+}
+
+function searchVideoRow(it){
+  const img = it.thumb
+    ? `<img class="app-img vthumb" data-fallback="🎬" src="${safeUrl(it.thumb)}" alt="" loading="lazy">`
+    : `<div class="noimg">🎬</div>`;
+  const k = KIND[it.kind] || KIND.regular;
+  return `<tr>
+    <td class="rank"><span class="ltr">#${it.rank}</span></td>
+    <td><div class="app-cell">${img}<div class="meta">
+      <a class="name" href="${safeUrl(it.url)}" target="_blank" rel="noopener">${escapeHtml(it.title)}</a>
+      <div class="dev">${escapeHtml(it.channel)} · ${escapeHtml(CATS[it.categoryId] || 'غير مصنّف')}</div></div></div></td>
+    <td>${numCell(it.views, 'مشاهدة')}</td>
+    <td class="hide-md">${numCell(it.likes, '')}</td>
+    <td class="hide-md">${numCell(it.comments, '')}</td>
+    <td class="hide-md"><span class="pill gray"><span class="ltr">${fmtDur(it.duration, it.live)}</span></span></td>
+    <td>${dateCell(it.published)}</td>
+    <td><span class="pill ${k[0]}">${k[1]}</span></td>
+  </tr>`;
+}
+
+function searchChannelRow(it){
+  const img = it.thumb
+    ? `<img class="app-img" data-fallback="📺" src="${safeUrl(it.thumb)}" alt="" loading="lazy" style="border-radius:50%">`
+    : `<div class="noimg" style="width:44px;height:44px">📺</div>`;
+  const subs = it.hiddenSubs ? `<div class="cell-main na">مخفي</div>` : numCell(it.subs, 'مشترك');
+  const ctry = it.country
+    ? `<span class="pill blue">${flag(it.country)} ${escapeHtml(regionName(it.country))}</span>`
+    : `<div class="cell-main na">—</div>`;
+  return `<tr>
+    <td class="rank"><span class="ltr">#${it.rank}</span></td>
+    <td><div class="app-cell">${img}<div class="meta">
+      <a class="name" href="${safeUrl(it.url)}" target="_blank" rel="noopener">${escapeHtml(it.title)}</a>
+      <div class="dev"><span class="ltr">${escapeHtml(it.handle || '')}</span></div></div></div></td>
+    <td>${subs}</td>
+    <td class="hide-md">${numCell(it.videos, 'فيديو')}</td>
+    <td>${numCell(it.views, 'مشاهدة')}</td>
+    <td class="hide-md">${dateCell(it.created)}</td>
+    <td>${ctry}</td>
+  </tr>`;
+}
+
+function renderSearch(){
+  const box = $('searchResults'), s = state.search;
+  $('searchBtn').disabled = s.status === 'loading';
+  if(s.status === 'idle'){ box.innerHTML = ''; return; }
+  const isCh = s.type === 'channel';
+  const head = extra => `<div class="sec-head"><div><h3>🔎 نتائج البحث عن «${escapeHtml(s.q)}» (${isCh ? 'قنوات' : 'فيديوهات'})</h3>
+    <div class="meta">المصدر: YouTube Data API v3 (<span class="ltr">search.list</span>) · الموسيقى غير مستبعدة هنا · كل بحث جديد يستهلك 101 وحدة من الحصة اليومية (10,000)</div></div>
+    <div class="head-tools" style="display:flex;gap:10px;align-items:center">${extra || ''}<button class="btn-ghost" type="button" data-close="1">✕ إغلاق</button></div></div>`;
+
+  if(s.status === 'loading'){
+    const cols = isCh ? 7 : 8;
+    const rows = Array.from({ length: 4 }, () => `<tr class="skel-row">${'<td><div class="skel" style="width:70px"></div></td>'.repeat(cols)}</tr>`).join('');
+    box.innerHTML = `<div class="section">${head('')}<div class="table-wrap"><table><tbody>${rows}</tbody></table></div></div>`;
+    return;
+  }
+  if(s.status === 'error'){
+    box.innerHTML = `<div class="section">${head('')}<div class="err">${escapeHtml(s.error)}</div></div>`;
+    return;
+  }
+  const items = s.data.items || [];
+  const badge = `<span class="badge">${items.length} نتيجة · ${clockMs(s.data.syncedAt)}</span>`;
+  if(!items.length){
+    box.innerHTML = `<div class="section">${head(badge)}<div class="empty"><div class="big">🔍</div><h4>لا نتائج لهذا البحث</h4></div></div>`;
+    return;
+  }
+  let table;
+  if(isCh){
+    const rows = sortBy(items, state.sorts.searchc, CH_GET, (a, b) => a.rank - b.rank);
+    table = `<thead><tr>
+      ${thSort('searchc', 'rank', 'الترتيب', 'ترتيب نتيجة البحث')}
+      ${thSort('searchc', 'name', 'القناة', 'الاسم · المعرّف')}
+      ${thSort('searchc', 'subs', 'المشتركون', 'subscriberCount')}
+      ${thSort('searchc', 'videos', 'الفيديوهات', 'videoCount', 'hide-md')}
+      ${thSort('searchc', 'views', 'المشاهدات', 'viewCount')}
+      ${thSort('searchc', 'created', 'تاريخ الإنشاء', 'publishedAt', 'hide-md')}
+      ${thSort('searchc', 'country', 'الدولة', 'country')}
+    </tr></thead><tbody>${rows.map(searchChannelRow).join('')}</tbody>`;
+  } else {
+    const rows = sortBy(items, state.sorts.searchv, GET, (a, b) => a.rank - b.rank);
+    table = `<thead><tr>
+      ${thSort('searchv', 'rank', 'الترتيب', 'ترتيب نتيجة البحث')}
+      ${thSort('searchv', 'name', 'الفيديو', 'العنوان · القناة · التصنيف')}
+      ${thSort('searchv', 'views', 'المشاهدات', 'viewCount')}
+      ${thSort('searchv', 'likes', 'الإعجابات', 'likeCount', 'hide-md')}
+      ${thSort('searchv', 'comments', 'التعليقات', 'commentCount', 'hide-md')}
+      ${thSort('searchv', 'duration', 'المدة', 'duration', 'hide-md')}
+      ${thSort('searchv', 'published', 'تاريخ النشر', 'publishedAt')}
+      <th>النوع<span class="real">عادي · Short · كيدس</span></th>
+    </tr></thead><tbody>${rows.map(searchVideoRow).join('')}</tbody>`;
+  }
+  box.innerHTML = `<div class="section">${head(badge)}<div class="table-wrap"><table>${table}</table></div></div>`;
+}
+
+/* ================================================================
+   العرض
+   ================================================================ */
+function renderAll(){
+  const s = state.stores;
+  let html;
+  if(s.status === 'loading') html = skeleton();
+  else if(s.status === 'error') html = unreachableCard();
+  else html = SECTIONS.filter(d => state.type === 'all' || state.type === d.id).map(d => videoSection(d, s.data)).join('') + notesBox(s.data);
+  $('results').innerHTML = html;
+  $('refreshBtn').disabled = s.status === 'loading';
+}
+
+/* ---------- ربط الأحداث ---------- */
+$('refreshBtn').addEventListener('click', () => loadStores(true));
+function onHeadActivate(e){
+  const th = e.target.closest && e.target.closest('th[data-sk]');
+  if(!th) return;
+  if(e.type === 'keydown'){ if(e.key !== 'Enter' && e.key !== ' ') return; e.preventDefault(); }
+  toggleSort(th.dataset.tbl, th.dataset.sk);
+  renderAll();
+  renderSearch();
+}
+$('results').addEventListener('click', onHeadActivate);
+$('results').addEventListener('keydown', onHeadActivate);
+$('searchResults').addEventListener('click', e => {
+  if(e.target.closest && e.target.closest('[data-close]')){ state.search = { status: 'idle' }; renderSearch(); return; }
+  onHeadActivate(e);
+});
+$('searchResults').addEventListener('keydown', onHeadActivate);
+$('searchBtn').addEventListener('click', runSearch);
+$('sq').addEventListener('keydown', e => { if(e.key === 'Enter') runSearch(); });
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+  state.type = c.dataset.type;
+  document.querySelectorAll('.chip').forEach(x => x.classList.toggle('active', x === c));
+  renderAll();
+}));
+$('cc').addEventListener('change', e => { state.cc = e.target.value; renderAll(); });
+let qTimer;
+$('q').addEventListener('input', e => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); renderAll(); }, 150); });
+
+// صورة فشل تحميلها → أيقونة بديلة (حدث error لا يصعد، فنلتقطه في مرحلة الالتقاط)
+document.addEventListener('error', e => {
+  const t = e.target;
+  if(t && t.tagName === 'IMG' && t.classList.contains('app-img')){
+    const d = document.createElement('div');
+    d.className = 'noimg';
+    d.textContent = t.dataset.fallback || '📦';
+    t.replaceWith(d);
+  }
+}, true);
+
+loadStores(false);
+</script>
+</body>
+</html>

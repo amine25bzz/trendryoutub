@@ -1,0 +1,33 @@
+{
+  "name": "trendradar",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "main": "main.cjs",
+  "description": "TrendRadar",
+  "author": "you",
+  "scripts": {
+    "start": "node server.js",
+    "app": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.trendradar.app",
+    "productName": "TrendRadar",
+    "files": [
+      "main.cjs",
+      "server.js",
+      "index.html",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable"
+    }
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.23.0",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2"
+  }
+}
