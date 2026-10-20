@@ -11,7 +11,7 @@ if (!process.env.YOUTUBE_API_KEY && fs.existsSync(keyFile)) {
 let server;
 
 async function start() {
-  const { createServer } = await import('./local-server.js');
+  const { createServer } = await import('./server.js');
   server = createServer();
   await new Promise(res => server.listen(0, '127.0.0.1', res)); // منفذ حر تلقائياً
   const port = server.address().port;

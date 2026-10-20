@@ -1,4 +1,7 @@
-// TrendRadar — خادم محلي لتشغيل التطبيق على الحاسوب و Electron
+// TrendRadar — خادم صغير يجلب ترند يوتيوب من YouTube Data API
+// ----------------------------------------------------------------
+// نسخة تعمل على Vercel وأيضاً محلياً وعبر Electron.
+
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
@@ -6,9 +9,9 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CFG, collect, search } from './lib/youtube.js';
 
-const HERE = process.pkg ? path.dirname(process.execPath) : path.dirname(fileURLToPath(import.meta.url));
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 
-// تحميل متغيرات البيئة تلقائياً إن وُجد ملف .env أو key.txt محلياً
+// تحميل متغيرات البيئة تلقائياً محلياً إن وُجدت
 if (typeof process.loadEnvFile === 'function') {
   try { process.loadEnvFile(); } catch {}
 }
@@ -55,17 +58,27 @@ export function createServer(deps = {}){
     return inflight;
   }
 
-  return http.createServer(async (req, res) => {
+  const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
     if(req.method === 'OPTIONS'){ res.writeHead(204, cors); return res.end(); }
     try {
       if(url.pathname === '/api/trends'){
+        if(!CFG.key){
+          res.writeHead(400, { ...cors, 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({
+            error: 'مفتاح YOUTUBE_API_KEY غير موجود. يرجى إضافته في إعدادات البيئة (Environment Variables) ثم إعادة النشر.'
+          }));
+        }
         const data = await getTrends(url.searchParams.get('refresh') === '1');
-        res.writeHead(200, { ...cors, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.writeHead(200, { ...cors, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 's-maxage=1800, stale-while-revalidate=3600' });
         return res.end(JSON.stringify(data));
       }
       if(url.pathname === '/api/search'){
+        if(!CFG.key){
+          res.writeHead(400, { ...cors, 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ error: 'مفتاح YOUTUBE_API_KEY غير مضبوط' }));
+        }
         const q = (url.searchParams.get('q') || '').trim().slice(0, 100);
         const type = url.searchParams.get('type') === 'channel' ? 'channel' : 'video';
         const head = { ...cors, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
@@ -90,12 +103,24 @@ export function createServer(deps = {}){
       res.writeHead(404, { ...cors, 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Not found');
     } catch(e){
+      console.error('Request error:', e);
       res.writeHead(500, { ...cors, 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ error: msg(e) }));
     }
   });
+  return server;
 }
 
+/* ---------------- التصدير لـ Vercel ---------------- */
+// Vercel يحتاج دالة (req, res) => void، لا كائن http.Server.
+// لذلك نُنشئ الخادم مرة واحدة ونمرر الطلبات إليه يدويًا.
+const app = createServer();
+
+export default function handler(req, res){
+  return app.emit('request', req, res);
+}
+
+/* ---------------- التشغيل المحلي ---------------- */
 function listen(srv, port, tries = 10){
   return new Promise((resolve, reject) => {
     const onError = e => {
@@ -112,17 +137,10 @@ function listen(srv, port, tries = 10){
   });
 }
 
-const isDirectRun = process.argv[1] && (
-  import.meta.url === pathToFileURL(process.argv[1]).href ||
-  process.argv[1].endsWith('server.js')
-);
-
-if(isDirectRun){
-  if(!CFG.key) console.warn('تنبيه: YOUTUBE_API_KEY غير مضبوط، ستفشل الطلبات حتى تضبطه.');
-  const port = Number(process.env.PORT) || 3000;
-  const srv = createServer();
-  listen(srv, port).then(p => {
-    console.log(`TrendRadar يعمل على http://localhost:${p}  (الدول: ${CFG.regions.join(', ')})`);
+// يعمل فقط عند التشغيل المباشر (npm start)، ولا يعمل داخل Vercel.
+if(process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href){
+  listen(app, CFG.port).then(port => {
+    console.log(`TrendRadar يعمل على http://localhost:${port}  (الدول: ${CFG.regions.join(', ')})`);
   }).catch(e => { console.error('تعذّر تشغيل الخادم:', e.message); process.exit(1); });
 }
 
