@@ -7,7 +7,7 @@
   "description": "TrendRadar",
   "author": "you",
   "scripts": {
-    "start": "node server.js",
+    "start": "node local-server.js",
     "app": "electron .",
     "dist": "electron-builder --win portable"
   },
@@ -16,7 +16,8 @@
     "productName": "TrendRadar",
     "files": [
       "main.cjs",
-      "server.js",
+      "local-server.js",
+      "lib/**/*",
       "index.html",
       "package.json"
     ],
