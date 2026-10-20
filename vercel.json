@@ -1,4 +1,7 @@
 {
-  "version": 2,
-  "cleanUrls": true
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 60
+    }
+  }
 }

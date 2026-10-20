@@ -1,4 +1,4 @@
-import { collect, CFG } from '../server.js';
+import { collect, CFG } from '../lib/youtube.js';
 
 let cache = null;
 let inflight = null;
@@ -17,23 +17,41 @@ async function getTrends(force) {
   return inflight;
 }
 
+function send(res, status, body) {
+  const payload = JSON.stringify(body);
+  if (typeof res.status === 'function' && typeof res.json === 'function') {
+    return res.status(status).json(body);
+  }
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.end(payload);
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    return res.status(204).end();
+    res.statusCode = 204;
+    return res.end();
   }
 
   try {
+    if (!CFG.key) {
+      return send(res, 400, {
+        error: 'مفتاح YOUTUBE_API_KEY غير موجود في Vercel. يرجى إضافته في Environment Variables ثم عمل Redeploy.'
+      });
+    }
+
     const force = req.query?.refresh === '1';
     const data = await getTrends(force);
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
-    return res.status(200).json(data);
+    return send(res, 200, data);
   } catch (e) {
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    return res.status(500).json({ error: e.message || String(e) });
+    console.error('Error in /api/trends:', e);
+    return send(res, 500, { error: e.message || String(e) });
   }
 }
